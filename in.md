@@ -1,13 +1,13 @@
 # ------------------- Simulation control -------------------
-units       real          # 单位制: real / lj
-dt          1.0           # 时间步长 (fs in real units)
-steps       100000        # 总步数
-thermo      1           # 每隔多少步输出一次热力学信息
-T_target    180.0         # 目标温度
+units       real          # units: real / lj
+dt          1.0           # time step (fs in real units)
+steps       100000        # total number of steps
+thermo      1              # output thermodynamic info every this many steps
+T_target    180.0         # target temperature
 
 # ------------------- Nose–Hoover chain -------------------
-nhc_chain   3             # 链长 M
-Tdamp       80.0           # 温控阻尼
+nhc_chain   3             # chain length M
+Tdamp       80.0          # thermostat damping time
 
 # ------------------- Lennard-Jones parameters-------------------
 epsilon     0.234         
@@ -16,7 +16,7 @@ rc          8.76
 mass        39.948        
 
 # ------------------- File IO -------------------
-coords      coords.data   # 初始结构
-output      output.log    # 输出日志
-plot        md_energy_temp.png   # 输出图片
+coords      coords.data   # initial structure file
+output      output.log    # output log file
+plot        md_energy_temp.png   # output image file
 

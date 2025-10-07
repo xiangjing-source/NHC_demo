@@ -12,7 +12,7 @@
 
 using namespace std;
 
-// ------------------- 原子结构 -------------------
+// ------------------- Atomic structure -------------------
 struct Atom {
     double x[3];
     double v[3];
@@ -22,7 +22,7 @@ struct Atom {
 vector<Atom> atoms;
 int N = 0;
 
-// ------------------- 模拟参数（默认值，可被输入文件覆盖） -------------------
+// ------------------- Simulation parameters (defaults, can be overridden by input file) -------------------
 double dt = 1.0;        // fs
 int nsteps = 100000;
 int thermo = 100;
@@ -31,34 +31,34 @@ int M = 3;               // NHC chain length
 double Tdamp = 5.0;      // fs
 string units = "real";
 
-// 周期性盒子
+// Periodic box
 double Lx=21.04, Ly=21.04, Lz=21.04;
 
-// Nose–Hoover chain变量
+// Nose–Hoover chain variables
 vector<double> xi, eta, Q;
 
-// LJ参数
+// Lennard-Jones parameters
 double epsilon = 0.234;
 double sigma   = 3.504;
 double rc      = 8.76;
 double mass    = 39.948;
 
-// Boltzmann常数
+// Boltzmann constant
 double kB = 0.0019872041; // real 单位
 
-// 文件 IO
+// File IO
 string coords_file = "coords.data";
 string output_file = "output.log";
 string plot_file   = "md_energy_temp.png";
 
-// ------------------- 周期边界 -------------------
+// ------------------- Periodic boundaries -------------------
 inline double pbc(double x, double L) {
     while (x > 0.5*L) x -= L;
     while (x < -0.5*L) x += L;
     return x;
 }
 
-// ------------------- 读取输入文件 -------------------
+// ------------------- Read input file -------------------
 void read_input(const string &filename) {
     ifstream fin(filename);
     if(!fin.is_open()) {
@@ -89,21 +89,21 @@ void read_input(const string &filename) {
     }
     fin.close();
 
-    // 设置单位制
+    // set units
     if(units=="lj") kB = 1.0;
     else kB = 0.0019872041;
 }
-// ------------------- 从 coords.data 读取盒子尺寸 -------------------
+// ------------------- Read box dimensions from coords.data -------------------
 void read_box(const string &filename) {
     ifstream fin(filename);
     if(!fin.is_open()) { cerr << "Cannot open file\n"; exit(1); }
 
     string line;
-    getline(fin, line); // 第一行: 原子数，跳过
+    getline(fin, line); // first line: number of atoms, skip
 
-    getline(fin, line); // 第二行: Lattice
+    getline(fin, line); // second line: Lattice
     size_t pos1 = line.find("Lattice=\"");
-    if(pos1 != string::npos){
+        if(pos1 != string::npos){
         pos1 += 9; // 跳过 Lattice="
         size_t pos2 = line.find("\"", pos1);
         string lattice_str = line.substr(pos1, pos2 - pos1);
@@ -120,7 +120,7 @@ void read_box(const string &filename) {
     fin.close();
 }
 
-// ------------------- 读取初始结构 -------------------
+// ------------------- Read initial structure (extended XYZ) -------------------
 void read_xyz_extended(const string &filename) {
     ifstream fin(filename);
     if(!fin.is_open()) { cerr << "Cannot open coords file\n"; exit(1); }
@@ -139,7 +139,7 @@ void read_xyz_extended(const string &filename) {
     fin.close();
 }
 
-// ------------------- 初始化速度 -------------------
+// ------------------- Initialize velocities -------------------
 void init_velocities() {
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     mt19937 gen(seed);
@@ -150,7 +150,7 @@ void init_velocities() {
         for(int d=0;d<3;d++)
             atoms[i].v[d] = dist(gen);
 
-    // 去质心速度
+    // remove center-of-mass velocity
     double vcm[3]={0,0,0};
     for(int i=0;i<N;i++)
         for(int d=0;d<3;d++) vcm[d]+=atoms[i].v[d];
@@ -159,7 +159,7 @@ void init_velocities() {
         for(int d=0;d<3;d++) atoms[i].v[d]-=vcm[d];
 }
 
-// ------------------- 邻居列表 -------------------
+// ------------------- Neighbor list -------------------
 struct NeighborList {
     vector<vector<int>> neigh;
     double skin;
@@ -183,7 +183,7 @@ struct NeighborList {
 
 NeighborList nlist(0.2); // skin=0.2Å
 
-// ------------------- 力计算 -------------------
+// ------------------- Force computation -------------------
 double compute_forces() {
     for(int i=0;i<N;i++) for(int d=0;d<3;d++) atoms[i].f[d]=0;
     double epot=0;
@@ -209,7 +209,7 @@ double compute_forces() {
     return epot;
 }
 
-// ------------------- 动能和温度 -------------------
+// ------------------- Kinetic energy and temperature -------------------
 double compute_kinetic(){
     double vcm[3] = {0.0, 0.0, 0.0};
     for(int i=0;i<N;i++) for(int d=0; d<3; d++) vcm[d] += atoms[i].v[d];
@@ -228,7 +228,7 @@ double compute_temperature(double ekin){
     return (2.0*ekin)/((3.0*N-3)*kB);
 }
 
-// ------------------- NHC 半步更新 -------------------
+// ------------------- NHC half-step update -------------------
 void nhc_halfstep(double &ekin){
     double dt2 = dt * 0.5;
     double dt4 = dt2 * 0.5;
@@ -261,7 +261,7 @@ void nhc_halfstep(double &ekin){
     ekin = compute_kinetic();
 }
 
-// ------------------- 主程序 -------------------
+// ------------------- Main program -------------------
 int main(int argc, char* argv[]){
     if(argc<2){ cerr<<"Usage: ./md input.in"<<endl; return 1; }
     read_input(argv[1]);
@@ -317,7 +317,7 @@ int main(int argc, char* argv[]){
     }
     fout.close();
 
-    // 自动调用 Python 绘图
+    // Automatically call Python plotting
     string cmd = "python3 data.py";
     int ret = system(cmd.c_str());
     if(ret != 0){
